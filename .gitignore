@@ -1,0 +1,16 @@
+# macOS
+.DS_Store
+
+# Rust
+/target
+
+# Idea
+.idea
+
+# VSCode
+.vscode
+
+# flamegraph
+flamegraph.svg
+
+.z3-trace
