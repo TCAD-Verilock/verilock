@@ -31,9 +31,6 @@ pub fn analyze(c: &Case, flatten: bool) {
         let path = &case.path;
         let id = &case.identifier;
         let project = parser::parse_project(path);
-        let config = Config::new();
-        let context = Context::new(&config);
-        let solver = Solver::new(&context);
         let session_types = extract_protocol(&project, id);
         match session_types {
             Ok(t) => {
@@ -50,7 +47,6 @@ pub fn analyze(c: &Case, flatten: bool) {
                     &type_map,
                     &module_instances,
                     &connections,
-                    &solver,
                     flatten)
             }
             Err(e) => e.report(),
@@ -76,13 +72,15 @@ fn analyze_dependency_forest(
     type_map: &HashMap<String, TypedModule>,
     module_instances: &[ModuleInstance],
     connections: &[Connect],
-    solver: &Solver,
     flatten: bool
 ) {
+    let config = Config::new();
+    let context = Context::new(&config);
+    let solver = Solver::new(&context);
     if flatten {
-        analyze_forest_flatten(forest, type_map, module_instances, connections, solver)
+        analyze_forest_flatten(forest, type_map, module_instances, connections, &solver)
     } else {
-        analyze_forest_parallel(forest, type_map, module_instances, connections, solver)
+        analyze_forest_parallel(forest, type_map, module_instances, connections, &solver)
     }
 }
 
