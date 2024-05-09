@@ -141,14 +141,14 @@ fn single(c: &str) {
 fn analyze_flatten_with_info(c: &Case) {
     c.get_name().map(print_boxed_name);
     println!("-------------------");
-    analysis::analyze(c, true);
+    analysis::timed_analyze(c, true);
     println!("-------------------");
 }
 
 fn analyze_with_info(c: &Case) {
     c.get_name().map(print_boxed_name);
     println!("-------------------");
-    analysis::analyze(c, false);
+    analysis::timed_analyze(c, false);
     println!("-------------------");
 }
 
@@ -165,7 +165,7 @@ fn check_flatten(p: &String) {
         path: Box::new(PathBuf::from(p)),
         identifier: task::ID.clone(),
     };
-    analysis::analyze(&case, true)
+    analysis::timed_analyze(&case, true)
 }
 
 fn check(p: &String) {
@@ -173,5 +173,5 @@ fn check(p: &String) {
         path: Box::new(PathBuf::from(p)),
         identifier: task::ID.clone(),
     };
-    analysis::analyze(&case, false)
+    analysis::timed_analyze(&case, false)
 }

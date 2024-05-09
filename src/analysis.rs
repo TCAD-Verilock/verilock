@@ -1,5 +1,5 @@
 use std::collections::{HashMap, VecDeque};
-use std::sync::mpsc::{channel, Sender};
+use std::sync::mpsc::{channel, Receiver, Sender};
 use std::thread;
 use std::time::{Instant, Duration};
 
@@ -17,43 +17,22 @@ type VerificationTask = ModuleInfo;
 
 type TaskQueue = VecDeque<VerificationTask>;
 
-pub fn analyze(c: &Case, flatten: bool) {
+pub fn timed_analyze(c: &Case, flatten: bool) {
     let start = Instant::now();
-    let (tx, rx): (Sender<Result<(), u64>>, _) = channel();
-    let worker_sender = tx.clone();
+    let (timer_sender, timer_receiver): (Sender<Result<(), u64>>, _) = channel();
+    let worker_sender = timer_sender.clone();
     let _ = thread::spawn(move || {
         let timeout = 600;
         thread::sleep(Duration::from_secs(timeout));
-        let _ = tx.send(Err(timeout));
+        let _ = timer_sender.send(Err(timeout));
     });
     let case = c.clone();
+    let (abort_sender, abort_receiver) : (Sender<()>, _) = channel();
     let _ = thread::spawn(move || {
-        let path = &case.path;
-        let id = &case.identifier;
-        let project = parser::parse_project(path);
-        let session_types = extract_protocol(&project, id);
-        match session_types {
-            Ok(t) => {
-                let SessionComplex {
-                    dependency_forest,
-                    modules,
-                    module_instances,
-                    channel_instances: _,
-                    connections,
-                } = t;
-                let type_map = type_map(&modules);
-                analyze_dependency_forest(
-                    dependency_forest,
-                    &type_map,
-                    &module_instances,
-                    &connections,
-                    flatten)
-            }
-            Err(e) => e.report(),
-        };
+        parse_and_analyze(case, flatten, abort_receiver);
         let _ = worker_sender.send(Ok(()));
     });
-    match rx.recv() {
+    match timer_receiver.recv() {
         Err(_) => println!("Channel error"),
         Ok(r) => match r {
             Ok(_) => {
@@ -61,10 +40,38 @@ pub fn analyze(c: &Case, flatten: bool) {
                 println!("Time elapsed in verification is: {:?}", duration);
             },
             Err(e) => {
+                let _ = abort_sender.send(());
                 eprintln!("Time out after {} seconds", e)
             },
         },
     }
+}
+
+fn parse_and_analyze(c: Case, flatten: bool, abort_receiver: Receiver<()>) {
+    let path = &c.path;
+    let id = &c.identifier;
+    let project = parser::parse_project(path);
+    let session_types = extract_protocol(&project, id);
+    match session_types {
+        Ok(t) => {
+            let SessionComplex {
+                dependency_forest,
+                modules,
+                module_instances,
+                channel_instances: _,
+                connections,
+            } = t;
+            let type_map = type_map(&modules);
+            analyze_dependency_forest(
+                dependency_forest,
+                &type_map,
+                &module_instances,
+                &connections,
+                flatten,
+                abort_receiver)
+        }
+        Err(e) => e.report(),
+    };
 }
 
 fn analyze_dependency_forest(
@@ -72,15 +79,16 @@ fn analyze_dependency_forest(
     type_map: &HashMap<String, TypedModule>,
     module_instances: &[ModuleInstance],
     connections: &[Connect],
-    flatten: bool
+    flatten: bool,
+    abort_receiver: Receiver<()>
 ) {
     let config = Config::new();
     let context = Context::new(&config);
     let solver = Solver::new(&context);
     if flatten {
-        analyze_forest_flatten(forest, type_map, module_instances, connections, &solver)
+        analyze_forest_flatten(forest, type_map, module_instances, connections, &solver, abort_receiver)
     } else {
-        analyze_forest_parallel(forest, type_map, module_instances, connections, &solver)
+        analyze_forest_parallel(forest, type_map, module_instances, connections, &solver, abort_receiver)
     }
 }
 
@@ -89,7 +97,8 @@ fn analyze_forest_flatten(
     type_map: &HashMap<String, TypedModule>,
     module_instances: &[ModuleInstance],
     connections: &[Connect],
-    solver: &Solver
+    solver: &Solver,
+    abort_receiver: Receiver<()>
 ) {
     let mut group = Group::new();
     for tree in forest {
@@ -130,7 +139,7 @@ fn analyze_forest_flatten(
         module_name: String::from("VirtualParent"),
         ports: vec![],
     };
-    match synthesize(group, virtual_parent, solver) {
+    match synthesize(group, virtual_parent, solver, &abort_receiver) {
         Ok(_) => println!("verified"),
         Err(e) => e.report(),
     }
@@ -141,7 +150,8 @@ fn analyze_forest_parallel(
     type_map: &HashMap<String, TypedModule>,
     module_instances: &[ModuleInstance],
     connections: &[Connect],
-    solver: &Solver
+    solver: &Solver,
+    abort_receiver: Receiver<()>
 ) {
     let mut error_detected = false;
     for tree in forest {
@@ -151,6 +161,7 @@ fn analyze_forest_parallel(
             module_instances,
             connections,
             solver,
+            &abort_receiver
         ) {
             Ok(_) => {}
             Err(e) => {
@@ -179,6 +190,7 @@ fn analyze_dependency_tree(
     module_instances: &[ModuleInstance],
     connections: &[Connect],
     solver: &Solver,
+    abort_receiver: &Receiver<()>
 ) -> Result<(), VerilockError> {
     let mut queue = dependency_tree_to_task_queue(&tree);
     let mut cfsm_map = HashMap::new();
@@ -204,7 +216,7 @@ fn analyze_dependency_tree(
             &mut cfsm_map,
         );
         group.insert(parent, parent_cfsm);
-        match synthesize(group, cfsm_map[&task.module_name].clone().module, solver) {
+        match synthesize(group, cfsm_map[&task.module_name].clone().module, solver, abort_receiver) {
             Ok(cfsm) => {
                 // update the CFSM map with the synthesized CFSM
                 cfsm_map.insert(task.module_name.clone(), cfsm);

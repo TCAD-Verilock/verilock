@@ -9,6 +9,7 @@ use std::collections::{HashMap, HashSet, VecDeque};
 use std::hash::{DefaultHasher, Hash, Hasher};
 use crate::hash::HashCode;
 use std::ops::Deref;
+use std::sync::mpsc::{Receiver, TryRecvError};
 use im::Vector;
 use im::HashMap as IHashMap;
 use z3::Solver;
@@ -76,6 +77,7 @@ pub fn synthesize(
     group: Group,
     parent: ModuleInfo,
     solver: &Solver,
+    abort_receiver: &Receiver<()>
 ) -> Result<Cfsm, VerilockError> {
     let mut local_nodes_to_global_node = HashMap::<Vec<NodeIndex>, BlankNode>::new();
     let local_configurations = group
@@ -150,6 +152,11 @@ pub fn synthesize(
                 visited_global_configs.insert(next_global_config);
                 synthesis_queue.push_back(next_synthesis_state);
             }
+        }
+        match abort_receiver.try_recv() {
+            Ok(_) => return Err(VerilockError::Timeout),
+            Err(TryRecvError::Empty) => {},
+            Err(TryRecvError::Disconnected) => return Err(VerilockError::Timeout)
         }
     }
     if let Some(instance) = check_live_locked(&group, &used_edges) {

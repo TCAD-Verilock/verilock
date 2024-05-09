@@ -22,6 +22,7 @@ pub enum VerilockError {
     DanglingSending(DanglingSending),
     DanglingReceiving(DanglingReceiving),
     LiveLock(LiveLock),
+    Timeout
 }
 
 impl VerilockError {
@@ -32,6 +33,7 @@ impl VerilockError {
             VerilockError::DanglingSending(e) => println!("{}", e),
             VerilockError::DanglingReceiving(e) => println!("{}", e),
             VerilockError::LiveLock(e) => println!("{}", e),
+            VerilockError::Timeout => {}
         }
     }
 }
