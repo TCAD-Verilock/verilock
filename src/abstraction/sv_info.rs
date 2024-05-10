@@ -216,10 +216,10 @@ pub struct ChannelInstance {
 
 #[derive(Debug, PartialEq, Clone, Eq, Hash)]
 pub enum PortDirection {
-    Input,
-    Output,
-    Inout,
-    Ref,
+    // Input,
+    // Output,
+    // Inout,
+    // Ref,
     Interface,
 }
 

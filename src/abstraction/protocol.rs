@@ -27,7 +27,6 @@ pub enum Protocol {
     Always(Box<Always>),
     Block(Box<Block>),
     Communication(Communication),
-    Extension(Extension),
     ForkJoin(Box<ForkJoin>),
     MultiArmsIfElse(Box<MultiArmedIfElse>),
     Update(Update),
@@ -135,8 +134,6 @@ impl Receiving {
         }
     }
 }
-
-pub type Extension = BoolExpression;
 
 #[derive(Debug, PartialEq, Clone, Eq, Hash)]
 pub struct Update {
@@ -606,7 +603,7 @@ fn infer_communication(
                         let prefix = prefixes.first()?;
                         let callee = get_identifier(RefNode::Identifier(&prefix.0), ast)?;
                         let task = get_identifier(RefNode::Identifier(&h.nodes.0.nodes.2), ast)?;
-                        let params = &(call.nodes.2.clone()?).nodes.1;
+                        let params = &call.nodes.2.clone()?.nodes.1;
                         if let ListOfArguments::Ordered(ordered) = params {
                             let params = ordered.nodes.0.contents();
                             if params.len() == 1 && params[0].is_some() {

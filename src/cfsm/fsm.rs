@@ -1,5 +1,5 @@
 use crate::abstraction::protocol::{
-    Always, Block, Communication, Connect, Extension, ForkJoin, Loop, MultiArmedIfElse, Protocol,
+    Always, Block, Communication, Connect, ForkJoin, Loop, MultiArmedIfElse, Protocol,
     Update,
 };
 use crate::abstraction::sv_info::{
@@ -249,7 +249,6 @@ fn construct_cfsm_from_protocol(
         Protocol::Always(a) => from_always(*a, instance, connections),
         Protocol::Block(b) => from_block(*b, instance, connections),
         Protocol::Communication(c) => from_communication(c),
-        Protocol::Extension(e) => from_extension(e),
         Protocol::ForkJoin(fj) => from_fork_join(
             linearize_fork_join(instance, &fj, connections),
             instance,
@@ -319,27 +318,6 @@ fn from_communication(c: Communication) -> AnonymousCFSM {
     }
 }
 
-fn from_extension(e: Extension) -> AnonymousCFSM {
-    let s = BlankNode::new();
-    let t = BlankNode::new();
-    let mut fsm = Fsm::new();
-    let sid = fsm.add_node(s);
-    let tid = fsm.add_node(t);
-    fsm.add_edge(
-        sid,
-        tid,
-        EdgeInfo {
-            communication: None,
-            guard: Some(e),
-            updates: vec![],
-        },
-    );
-    AnonymousCFSM {
-        initial: sid,
-        finals: HashSet::from([tid]),
-        fsm,
-    }
-}
 
 fn from_fork_join(
     fj: ForkJoin,
