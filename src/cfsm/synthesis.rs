@@ -77,6 +77,7 @@ pub fn synthesize(
     group: Group,
     parent: ModuleInfo,
     solver: &Solver,
+    solving_count: &mut i32,
     abort_receiver: &Receiver<()>
 ) -> Result<Cfsm, VerilockError> {
     let mut local_nodes_to_global_node = HashMap::<Vec<NodeIndex>, BlankNode>::new();
@@ -120,6 +121,7 @@ pub fn synthesize(
             &local_configurations,
             &current_env,
             solver,
+            solving_count,
             &group,
             &error_trace,
         )?;
@@ -387,12 +389,13 @@ fn generate_all_possible_synthesis_steps(
     local_configurations: &LocalConfigurations,
     current_env: &Environment,
     solver: &Solver,
+    solving_count: &mut i32,
     group: &Group,
     error_trace: &Vector<Action>,
 ) -> Result<Vec<SynthesisStep>, VerilockError> {
     let mut synthesis_steps = Vec::new();
     let (jumps, externals, sendings, receivings) =
-        all_possible_local_steps(local_configurations, group, current_env, solver);
+        all_possible_local_steps(local_configurations, group, current_env, solver, solving_count);
     for (cfsm_name, source_id, edge_id) in jumps
     {
         synthesis_steps.push(SynthesisStep::Jump(Jump {
@@ -482,6 +485,7 @@ fn all_possible_local_steps(
     group:&Group,
     env: &Environment,
     solver: &Solver,
+    solving_count: &mut i32
 ) -> (Vec<LocalStep>, Vec<LocalStep>, Vec<LocalStep>, Vec<LocalStep>) {
     let mut jumps = Vec::new();
     let mut externals = Vec::new();
@@ -495,6 +499,7 @@ fn all_possible_local_steps(
                 true
             } else {
                 let extended_env = modify_environment_by_edge(edge, env);
+                *solving_count += 1;
                 extended_env.satisfiable(solver).unwrap_or_else(|e| {
                     e.report();
                     false

@@ -85,11 +85,13 @@ fn analyze_dependency_forest(
     let config = Config::new();
     let context = Context::new(&config);
     let solver = Solver::new(&context);
+    let mut solving_count = 0;
     if flatten {
-        analyze_forest_flatten(forest, type_map, module_instances, connections, &solver, abort_receiver)
+        analyze_forest_flatten(forest, type_map, module_instances, connections, &solver, &mut solving_count, abort_receiver)
     } else {
-        analyze_forest_parallel(forest, type_map, module_instances, connections, &solver, abort_receiver)
+        analyze_forest_parallel(forest, type_map, module_instances, connections, &solver, &mut solving_count, abort_receiver)
     }
+    println!("solving count: {}", solving_count)
 }
 
 fn analyze_forest_flatten(
@@ -98,6 +100,7 @@ fn analyze_forest_flatten(
     module_instances: &[ModuleInstance],
     connections: &[Connect],
     solver: &Solver,
+    solving_count: &mut i32,
     abort_receiver: Receiver<()>
 ) {
     let mut group = Group::new();
@@ -139,7 +142,7 @@ fn analyze_forest_flatten(
         module_name: String::from("VirtualParent"),
         ports: vec![],
     };
-    match synthesize(group, virtual_parent, solver, &abort_receiver) {
+    match synthesize(group, virtual_parent, solver, solving_count, &abort_receiver) {
         Ok(_) => println!("verified"),
         Err(e) => e.report(),
     }
@@ -151,6 +154,7 @@ fn analyze_forest_parallel(
     module_instances: &[ModuleInstance],
     connections: &[Connect],
     solver: &Solver,
+    solvering_count: &mut i32,
     abort_receiver: Receiver<()>
 ) {
     let mut error_detected = false;
@@ -161,6 +165,7 @@ fn analyze_forest_parallel(
             module_instances,
             connections,
             solver,
+            solvering_count,
             &abort_receiver
         ) {
             Ok(_) => {}
@@ -190,6 +195,7 @@ fn analyze_dependency_tree(
     module_instances: &[ModuleInstance],
     connections: &[Connect],
     solver: &Solver,
+    solving_count: &mut i32,
     abort_receiver: &Receiver<()>
 ) -> Result<(), VerilockError> {
     let mut queue = dependency_tree_to_task_queue(&tree);
@@ -216,7 +222,7 @@ fn analyze_dependency_tree(
             &mut cfsm_map,
         );
         group.insert(parent, parent_cfsm);
-        match synthesize(group, cfsm_map[&task.module_name].clone().module, solver, abort_receiver) {
+        match synthesize(group, cfsm_map[&task.module_name].clone().module, solver, solving_count, abort_receiver) {
             Ok(cfsm) => {
                 // update the CFSM map with the synthesized CFSM
                 cfsm_map.insert(task.module_name.clone(), cfsm);

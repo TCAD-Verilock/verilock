@@ -5,10 +5,10 @@
   <img src="./img/verilock logo.jpg" width="160" />
 </p>
 `verilock` is a verification tool that can detect deadlocks in asynchronous circuits specified in SystemVerilog.
-This repository includes the artifacts for the OOPSLA 2024 submission #292.
+This repository includes the artifacts for TCAD.
 
 - `resource/cases` folder includes the cases collected from literatures.
-- `resource/gen` folder includes the circuits synthesized randomly by [xin](https://github.com/OOPSLA24-Verilock/xin), where `Gen1` ~ `Gen5` are the cases without deadlocks, and `Gen6` ~ `Gen10` are the ones with deadlocks.
+- `resource/gen` folder includes the circuits synthesized randomly by [xin](https://github.com/TCAD-Verilock/xin), where `Gen1` ~ `Gen5` are the cases without deadlocks, and `Gen6` ~ `Gen10` are the ones with deadlocks.
 
 ### Installation
 
