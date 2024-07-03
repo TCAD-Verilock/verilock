@@ -1,18 +1,20 @@
+use std::collections::{HashMap, HashSet, VecDeque};
+use std::hash::{DefaultHasher, Hash, Hasher};
+use std::ops::Deref;
+use std::sync::mpsc::{Receiver, TryRecvError};
+
+use im::HashMap as IHashMap;
+use im::Vector;
+use petgraph::graph::{EdgeIndex, NodeIndex};
+use petgraph::visit::EdgeRef;
+use z3::Solver;
+
 use crate::abstraction::protocol::Communication;
 use crate::abstraction::sv_info::{BoolExpression, Channel, ModuleInfo, ModuleInstance};
 use crate::cfsm::env::{Environment, ModifiableEnvironment};
-use crate::cfsm::fsm::{AnonymousCFSM, BlankNode, EdgeInfo, Cfsm, Fsm};
+use crate::cfsm::fsm::{AnonymousCFSM, BlankNode, Cfsm, EdgeInfo, Fsm};
 use crate::error::{Action, DanglingReceiving, DanglingSending, LiveLock, VerilockError};
-use petgraph::graph::{EdgeIndex, NodeIndex};
-use petgraph::visit::EdgeRef;
-use std::collections::{HashMap, HashSet, VecDeque};
-use std::hash::{DefaultHasher, Hash, Hasher};
 use crate::hash::HashCode;
-use std::ops::Deref;
-use std::sync::mpsc::{Receiver, TryRecvError};
-use im::Vector;
-use im::HashMap as IHashMap;
-use z3::Solver;
 
 type LocalStep = (ModuleInstance, NodeIndex, EdgeIndex);
 

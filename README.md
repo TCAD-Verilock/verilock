@@ -32,20 +32,20 @@ To replicate the experimental result from OOPSLA24 submission #292, please adher
 #### Observing Verification Results
 1. To observe the results that `verilock` verifies the cases from the literatures, run the command: 
 ```shell
-cargo run -- RQ1
+cargo run --release -- RQ1
 ```
 
 2. To observe the results that `verilock` verifies the cases randomly synthesized, run the command:
 ```shell
-cargo run -- RQ2
+cargo run --release -- RQ2
 ```
 
 3. To observe the results that `verilock-flatten` verifies the cases from the literatures, run the command:
 ```shell
-cargo run -- -f RQ1
+cargo run --release -- -f RQ1
 ```
 
 4. To observe the results that `verilock-flatten` verifies the cases randomly synthesized, run the command:
 ```shell
-cargo run -- -f RQ2
+cargo run --release -- -f RQ2
 ```

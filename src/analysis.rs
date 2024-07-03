@@ -63,6 +63,7 @@ fn parse_and_analyze(c: Case, flatten: bool, abort_receiver: Receiver<()>) {
             } = t;
             let type_map = type_map(&modules);
             analyze_dependency_forest(
+                c.get_name().unwrap_or(""),
                 dependency_forest,
                 &type_map,
                 &module_instances,
@@ -75,6 +76,7 @@ fn parse_and_analyze(c: Case, flatten: bool, abort_receiver: Receiver<()>) {
 }
 
 fn analyze_dependency_forest(
+    name: &str,
     forest: DependencyForest,
     type_map: &HashMap<String, TypedModule>,
     module_instances: &[ModuleInstance],
@@ -91,7 +93,7 @@ fn analyze_dependency_forest(
     } else {
         analyze_forest_parallel(forest, type_map, module_instances, connections, &solver, &mut solving_count, abort_receiver)
     }
-    println!("solving count: {}", solving_count)
+    println!("{} solving count: {}", name, solving_count)
 }
 
 fn analyze_forest_flatten(

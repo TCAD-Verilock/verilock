@@ -116,5 +116,5 @@ lazy_static! {
         VC7_.clone(),
         VC8_.clone(),
     );
-    pub static ref EXPERIMENT2: Vec<Case> = (51..=100).map(gen).collect();
+    pub static ref EXPERIMENT2: Vec<Case> = (91..=100).map(gen).collect();
 }
