@@ -28,7 +28,7 @@ cargo build
 ```
 
 ### Reproducing Experimental Results
-To replicate the experimental result from OOPSLA24 submission #292, please adhere to these instructions.
+To replicate the experimental result, please adhere to these instructions.
 #### Observing Verification Results
 1. To observe the results that `verilock` verifies the cases from the literatures, run the command: 
 ```shell
