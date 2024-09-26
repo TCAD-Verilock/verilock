@@ -1,0 +1,67 @@
+module pipeline
+is
+
+  type Logic is
+    Zero,
+    One,
+    X,
+    Z
+  end type
+
+  type Logic32 is
+    array [0..31] of Logic
+  end type
+
+  channel Interface is 
+    (data: Logic32)
+  end channel
+
+  process data_generator[
+    r: Interface
+  ] is
+    var randValue: Logic32 in
+      loop
+        randValue := Logic32(Zero);
+        randValue[30] := One;
+        r(randValue)
+      end loop
+    end var
+  end process
+
+  process data_bucket[
+    r: Interface
+  ] is
+    var received: Logic32 in
+      loop
+        r(?received)
+      end loop
+    end var
+  end process
+
+  process full_buffer [
+    left: Interface,
+    right: Interface
+  ] is
+    var data: Interface in
+      loop
+        left(?data);
+        right(data)
+      end loop
+    end var 
+  end process
+
+  process MAIN is
+    hide c1,c2,c3,c4 : Interface in
+      par
+         data_generator [c1]
+      || full_buffer [c1,c2]
+      || full_buffer [c2,c3]
+      || full_buffer [c3,c4]
+      || data_bucket [c4]
+      end par
+    end hide
+  end process
+
+end module 
+
+

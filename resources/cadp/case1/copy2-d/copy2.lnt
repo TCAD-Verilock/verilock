@@ -1,0 +1,72 @@
+module copy2
+is
+
+  type Logic is
+    Zero,
+    One,
+    X,
+    Z
+  end type
+
+  type Logic32 is
+    array [0..31] of Logic
+  end type
+
+  channel Interface is 
+    (data: Logic32)
+  end channel
+
+  process data_generator[
+    r: Interface
+  ] is
+    var randValue: Logic32 in
+      loop
+        randValue := Logic32(Zero);
+        randValue[30] := One;
+        r(randValue)
+      end loop
+    end var
+  end process
+
+  process data_bucket[
+    r: Interface
+  ] is
+    var received: Logic32 in
+      loop
+        r(?received)
+      end loop
+    end var
+  end process
+
+  process copy2 [
+    in_I: Interface,
+    out0_I: Interface,
+    out1_I: Interface
+  ] is
+    var data: Logic32 in
+      loop
+        in_I(?data);
+        par
+           out0_I(data)
+        || out1_I(data)
+        end par
+      end loop
+    end var 
+  end process
+
+  process MAIN is
+    hide in_I,out0_I,out1_I : Interface in
+      par
+        -- data_generator [in_I]
+        -- bugline, data_generator should be connected to in_I
+         data_generator [out0_I]
+      || data_bucket [out0_I]
+      || data_bucket [out1_I]
+      || copy2 [in_I,out0_I,out1_I]
+      end par
+    end hide
+  end process
+
+end module 
+
+

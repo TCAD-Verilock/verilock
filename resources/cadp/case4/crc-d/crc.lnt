@@ -1,0 +1,89 @@
+module crc
+is
+
+  type Logic is
+    Zero,
+    One,
+    X,
+    Z
+  end type
+
+  type Logic32 is
+    array [0..31] of Logic
+  end type
+
+  channel Interface is 
+    (data: Logic32)
+  end channel
+
+  process MAIN [
+    data: Interface,
+    count: Interface,
+    result: Interface
+  ] is
+    hide c : Interface in
+      par
+         FSM [c,count]
+      || Compute [c,data,result]
+      end par
+    end hide
+  end process
+
+  process FSM [
+    command: Interface,
+    count: Interface
+  ] is
+    var c,zero,two,three: Logic32 in
+      loop
+        zero := Logic32(Zero);
+        two := Logic32(Zero);
+        two[30] := One;
+        three := Logic32(Zero);
+        three[30] := One;
+        three[31] := One;
+        c := Logic32(Zero);
+        c[31] := One;
+        command(c);
+        count(?c);
+        while c != zero loop
+          command(two);
+        end loop;
+        command(three)
+      end loop
+    end var 
+  end process
+
+  process Compute [
+    command: Interface,
+    data: Interface,
+    result: Interface
+  ] is
+    var state,d,a,b,zero,one,two: Logic32 in
+      loop
+        zero := Logic32(Zero);
+        one := Logic32(Zero);
+        one[31] := One;
+        two := Logic32(Zero);
+        two[30] := One;
+        -- bug line, missing corresponding receiving action
+        -- command(?state);
+        if state == one then
+          b := zero
+        elsif state == two then
+          data(?d)
+          -- computation logic
+        else
+          data(?a);
+          if a == b then
+            result(one)
+          else 
+            result(zero)
+          end if
+        end if
+      end loop
+    end var
+  end process
+
+end module 
+
+
