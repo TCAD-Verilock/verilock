@@ -126,6 +126,7 @@ fn single(c: &str) {
         "CASE3D" => analyze_with_info(&task::VC3_),
         "CASE4D" => analyze_with_info(&task::VC4_),
         "CASE5D" => analyze_with_info(&task::VC5_),
+        "CASE5I" => analyze_with_info(&task::VC5_I),
         "CASE6D" => analyze_with_info(&task::VC6_),
         "CASE7D" => analyze_with_info(&task::VC7_),
         "CASE8D" => analyze_with_info(&task::VC8_),

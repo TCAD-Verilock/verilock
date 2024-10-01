@@ -74,6 +74,10 @@ lazy_static! {
         path: Box::new(PathBuf::from("resources/cases/case5/crc-env-d")),
         identifier: ID.clone()
     };
+    pub static ref VC5_I: Case = Case {
+        path: Box::new(PathBuf::from("resources/cases/case5/crc-env-i")),
+        identifier: ID.clone()
+    };
     pub static ref VC6: Case = Case {
         path: Box::new(PathBuf::from("resources/cases/case6/pipeline")),
         identifier: ID.clone()
@@ -116,5 +120,5 @@ lazy_static! {
         VC7_.clone(),
         VC8_.clone(),
     );
-    pub static ref EXPERIMENT2: Vec<Case> = (91..=100).map(gen).collect();
+    pub static ref EXPERIMENT2: Vec<Case> = (1..=100).map(gen).collect();
 }

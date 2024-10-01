@@ -1,70 +1,66 @@
-`include "Channel.sv"
+module CRCM(interface data,
+            interface count,
+            interface result);
+  Channel side(); 
+  Monitor monitor(side); 
+  // bug line, channels count and side are flipped
+  CRC crc(data, side, count, result); 
+endmodule
 
 module CRC(interface data,
            interface count,
-           interface result);
-  Channel com();
-  FSM fsm(com, count);
-  Compute compute(com, data, result);
+           interface side,
+           interface result);       
+  Channel command();
+  FSM fsm(command, count);
+  Compute c(command, data, result, side);
 endmodule
 
-module FSM(interface command,
-           interface count);
+module FSM(interface co,
+           interface ct);
   always begin
-    logic [7:0] s;
-    command.Send(1);
-    count.Receive(s);
-    while (s != 0) begin
-      command.Send(2);
-      s = s - 1; 
+    logic [7:0] len;
+    co.Send(1);
+    ct.Receive(len);
+    while (len != 0) begin
+      co.Send(2);
+      len = len - 1;
     end
-    command.Send(3);
+    co.Send(3);
   end
 endmodule
 
-module Compute(interface command,
-               interface data,
-               interface result);
+module Monitor(interface side);
+  logic complete;
   always begin
-    logic [7:0] state, d, a, b;
-    command.Receive(state);
+    side.Receive(complete);
+    // omitted handler logic
+  end
+endmodule
+
+module Compute(interface co,
+               interface d,
+               interface r,
+               interface s);
+  always begin
+    logic [7:0] state, bits, origin, calc;
+    co.Receive(state);
     if (state == 1) begin 
-      b = 0; 
+      calc = 0; 
     end else if (state == 2) begin
-      data.Receive(d);
-      // CRC computation logic
-    end else if (state == 3) begin
-      data.Receive(a);
-      if (a == b) begin 
-        result.Send(1); 
-      end else begin 
-        result.Send(0); 
+      d.Receive(bits);
+      // omitted CRC computation logic
+    end else begin
+      d.Receive(origin);
+      if (origin == calc) begin 
+        fork
+            r.Send(1); s.Send(1); 
+        join
+      end else begin
+        fork
+            r.Send(0); s.Send(0); 
+        join
       end
     end
   end
-endmodule
-
-module Monitor(interface notification,
-               interface result);
-    logic complete;
-    logic r;
-    logic unknown;
-    always begin
-        notification.Receive(complete);
-        if (unknown) begin
-            result.Receive(r);
-            // omitted logic
-        end else begin
-            result.Receive(r);
-            result.Send(9);
-        end
-    end
-endmodule
-
-module Top(interface data,
-           interface count,
-           interface notification);
-  Channel result();
-  Monitor monitor(notification, result);
-  CRC crc(data, count, result);
 endmodule
